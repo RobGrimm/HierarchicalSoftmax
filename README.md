@@ -1,7 +1,9 @@
 # benchmark_hierarchical_softmax
 
-benchmark_functions.py contains functionality for training flat and hierarchical softmax models on randomly generated data, then comparing the models in terms of in terms of (1) predictions on unseen data, (2) training loss, and (3) runtime. 
-Look at run.py for some examples. 
+benchmark_functions.py contains functionality for training flat and hierarchical softmax models on randomly generated data, then comparing the models in terms of in terms of (1) predictions on unseen data, (2) training loss, and (3) runtime. Look at run.py for some examples. 
+
+The hierarchical softmax class is adapted from the lisa-groundhog package: 
+https://github.com/lisa-groundhog/GroundHog
 
 Dependencies:
 
