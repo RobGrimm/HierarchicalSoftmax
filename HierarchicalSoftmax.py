@@ -5,7 +5,7 @@ import theano.tensor as T
 
 class HierarchicalSoftmax(object):
     """
-    2-level Hierarchical Softmax layer. Adapted from the Hierarchical Softmax layer from the liza-groundhog package:
+    2-level Hierarchical Softmax layer. Adapted from the Hierarchical Softmax layer from the lisa-groundhog package:
     https://github.com/lisa-groundhog/GroundHog
     """
 
