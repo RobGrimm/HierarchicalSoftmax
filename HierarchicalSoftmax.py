@@ -76,7 +76,7 @@ class HierarchicalSoftmax(object):
 
             output_, updates = theano.scan(fn=_path_probas, sequences=T.arange(batch_size))
 
-            # since we may have more possible paths through the tree than output classes,
+            # since we may have more possible paths through the graph than output classes,
             # ignore the remaining paths
             output_ = output_[:self.n_out]
 
