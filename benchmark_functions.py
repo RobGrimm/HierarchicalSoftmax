@@ -4,11 +4,11 @@ import numpy
 import theano
 
 import theano.tensor as T
-from matplotlib import pyplot
 
 from HierarchicalSoftmax import HierarchicalSoftmax
 from Softmax import Softmax
 
+from matplotlib import pyplot
 # set parameters for plots
 pyplot.rcParams.update({'figure.figsize': (25, 20), 'font.size': 25})
 
@@ -102,15 +102,15 @@ def generate_data_train_softmax(n_classes, n_training_examples, input_size, n_ep
         softmax = HierarchicalSoftmax(input_=x, target=y, n_in=input_size, n_out=n_classes)
         cost = softmax.cost
 
-        g_W = T.grad(cost=cost, wrt=softmax.W)
-        g_b = T.grad(cost=cost, wrt=softmax.b)
-        g_U = T.grad(cost=cost, wrt=softmax.U)
-        g_c = T.grad(cost=cost, wrt=softmax.c)
+        g_W = T.grad(cost=cost, wrt=softmax.W1)
+        g_b = T.grad(cost=cost, wrt=softmax.b1)
+        g_U = T.grad(cost=cost, wrt=softmax.W2)
+        g_c = T.grad(cost=cost, wrt=softmax.b2)
 
-        updates = [(softmax.W, softmax.W - learning_rate * g_W),
-                   (softmax.b, softmax.b - learning_rate * g_b),
-                   (softmax.U, softmax.U - learning_rate * g_U),
-                   (softmax.c, softmax.c - learning_rate * g_c)]
+        updates = [(softmax.W1, softmax.W1 - learning_rate * g_W),
+                   (softmax.b1, softmax.b1 - learning_rate * g_b),
+                   (softmax.W2, softmax.W2 - learning_rate * g_U),
+                   (softmax.b2, softmax.b2 - learning_rate * g_c)]
 
     # instantiate flat softmax model and calculate gradients
     else:
@@ -158,14 +158,13 @@ def generate_data_train_softmax(n_classes, n_training_examples, input_size, n_ep
     print '\n\n'
 
     # generate a single random test example
-    input_ = numpy.asarray([numpy.ones(input_size)])
+    input_ = numpy.asarray([numpy.random.uniform(size=input_size)])
     predictions = softmax.get_predictions(input_)
 
     # compute class prediction
     preds_eval = predictions.eval()
-    predicted = numpy.argmax(preds_eval)
 
-    return predicted, avg_loss, total_train_time
+    return preds_eval, avg_loss, total_train_time
 
 
 def benchmark_softmax(n_classes_range, plot_name, n_data_points=50000, input_size=3, n_epochs=2):
@@ -213,7 +212,7 @@ def benchmark_softmax(n_classes_range, plot_name, n_data_points=50000, input_siz
      # generate_data_train_softmax flat softmax models
     f_cost, f_time, f_preds = get_benchmark_data(hierarchical=False)
 
-    # plot results
+    #plot results
     plot_benchmark(n_classes_range, h_cost, f_cost, 'cost')
     plot_benchmark(n_classes_range, h_time, f_time, 'time')
     plot_benchmark(n_classes_range, h_preds, f_preds, 'predicted_class')

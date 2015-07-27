@@ -25,32 +25,33 @@ class HierarchicalSoftmax(object):
         """
         self.n_out = n_out
 
-        # output layer is a 2-level binary tree
-        # a predicted class label is defined as a a fixed arbitrary path through this tree
-        # we thus need sqrt(n_out) nodes in the first level of the tree
+        # output layer is a 2-level graph
+        # a predicted class label is defined as a a fixed arbitrary path through this graph
+        # we thus need sqrt(n_out) nodes in the first level
         self.n_level1_nodes = numpy.ceil(numpy.sqrt(n_out)).astype('int64')
-        # and at most sqrt(n_out) nodes in the second level
+        # and at most sqrt(n_out) nodes in the second level -- note that we may sometimes have have more
+        # possible paths through the graph than there are output classes
         self.n_level2_nodes = numpy.ceil(n_out/float(self.n_level1_nodes)).astype('int64')
 
-        # define weight matrix 'W' and bias 'b' for first layer in output tree
-        self.W = theano.shared(value=numpy.zeros((n_in,  self.n_level1_nodes), dtype=theano.config.floatX),
-                               name='W', borrow=True)
-        self.b = theano.shared(value=numpy.zeros((self.n_level1_nodes,), dtype=theano.config.floatX),
-                               name='b', borrow=True)
+        # define weight matrix 'W1' and bias 'b1' for first layer in output tree
+        self.W1 = theano.shared(value=numpy.zeros((n_in,  self.n_level1_nodes), dtype=theano.config.floatX),
+                                name='W1', borrow=True)
+        self.b1 = theano.shared(value=numpy.zeros((self.n_level1_nodes,), dtype=theano.config.floatX),
+                                name='b1', borrow=True)
 
-         # define weight matrix 'U' and bias 'c' for second layer in output tree
-        self.U = theano.shared(value=numpy.zeros((n_in,  self.n_level2_nodes), dtype=theano.config.floatX),
-                               name='W', borrow=True)
-        self.c = theano.shared(value=numpy.zeros((self.n_level2_nodes,), dtype=theano.config.floatX),
-                               name='b', borrow=True)
+         # define weight matrix 'W2' and bias 'b2' for second layer in output tree
+        self.W2 = theano.shared(value=numpy.zeros((n_in,  self.n_level2_nodes), dtype=theano.config.floatX),
+                                name='W2', borrow=True)
+        self.b2 = theano.shared(value=numpy.zeros((self.n_level2_nodes,), dtype=theano.config.floatX),
+                                name='b2', borrow=True)
 
-        self.params = [self.W, self.b, self.U, self.c]
+        self.params = [self.W1, self.b1, self.W2, self.b2]
 
         self.cost = -T.mean(T.log(self.forward_prop(input_, target)))
 
 
     def get_predictions(self, input_):
-        return self.forward_prop(input_)
+        return T.argmax(self.forward_prop(input_))
 
 
     def forward_prop(self, input_, target=None):
@@ -58,31 +59,36 @@ class HierarchicalSoftmax(object):
         If target is 'None', compute the probability of taking the correct path through the output tree.
         Else, compute the probability for each possible path (= each possible output class).
         """
+        level1_vals = T.nnet.softmax(T.dot(input_, self.W1) + self.b1)
+        level2_vals = T.nnet.softmax(T.dot(input_, self.W2) + self.b2)
+
+        batch_size = input_.shape[0]
+
         # compute all possible predictions [ time complexity is O(n_out) ]
         if target is None:
-            level1_vals = T.nnet.softmax(T.dot(input_, self.W) + self.b).flatten()
-            level2_vals = T.nnet.softmax(T.dot(input_, self.U) + self.c).flatten()
-            """works only for batch_size=1, at the moment.
-             can do a nested scan to make it work for more than 1 mini batch """
-            result, updates = theano.scan(fn=lambda k, array_: k * array_, sequences=level1_vals, non_sequences=level2_vals)
-            output_ = result.flatten()[:self.n_out]
+
+            def _path_probas(idx):
+                lev1_vec, lev2_vec = level1_vals[idx], level2_vals[idx]
+                result, updates = theano.scan(fn=lambda k, array_: k * array_,
+                                              sequences=lev1_vec,
+                                              non_sequences=lev2_vec)
+                return result.flatten()
+
+            output_, updates = theano.scan(fn=_path_probas, sequences=T.arange(batch_size))
+
+            # since we may have more possible paths through the tree than output classes,
+            # ignore the remaining paths
+            output_ = output_[:self.n_out]
 
         # compute only batch_size predictions [ time complexity is O(2 x sqrt(n_out)) = O(sqrt(n_out)) ]
         else:
-            # propagate input to level 1
-            level1_vals = T.nnet.softmax(T.dot(input_, self.W) + self.b)
-
-            # propagate input to level 2
-            level2_vals = T.nnet.softmax(T.dot(input_, self.U) + self.c)
-
             # to each class label, assign a pair of nodes in layer1 and layer2 of the output tree
             level1_idx = target // self.n_level1_nodes
             level2_idx = target % self.n_level2_nodes
 
             # calculate cost of taking correct path through tree to
-            bs = input_.shape[0]
-            level1_val = level1_vals[T.arange(bs), level1_idx]
-            level2_val = level2_vals[T.arange(bs), level2_idx]
+            level1_val = level1_vals[T.arange(batch_size), level1_idx]
+            level2_val = level2_vals[T.arange(batch_size), level2_idx]
             output_ = level1_val * level2_val
 
         return output_
