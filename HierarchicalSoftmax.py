@@ -30,7 +30,7 @@ class HierarchicalSoftmax(object):
         # we thus need at least sqrt(n_out) nodes in the first level
         # (ceil of the scalar x is the smallest integer i, such that i >= x)
         self.n_level1_nodes = numpy.ceil(numpy.sqrt(n_out)).astype('int64')
-        # and at least sqrt(n_out) nodes in the second level -- note that sometimes we may end up
+        # and at most sqrt(n_out) nodes in the second level -- note that sometimes we may end up
         # with a graph that has a few more possible paths than there are output classes
         self.n_level2_nodes = numpy.ceil(n_out/float(self.n_level1_nodes)).astype('int64')
 
@@ -57,7 +57,7 @@ class HierarchicalSoftmax(object):
 
     def forward_prop(self, input_, target=None):
         """
-        If target is 'None', compute the probability of taking the correct path through the output tree.
+        If target is 'None', compute the probability of taking the correct path through the output graph.
         Else, compute the probability for each possible path (= each possible output class).
         """
         level1_vals = T.nnet.softmax(T.dot(input_, self.W1) + self.b1)
