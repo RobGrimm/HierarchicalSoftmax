@@ -48,14 +48,15 @@ class HierarchicalSoftmax(object):
 
         self.params = [self.W1, self.b1, self.W2, self.b2]
 
-        self.cost = -T.mean(T.log(self.forward_prop(input_, target)))
+        self.p_y_given_x = self.forward_prop(input_, target)
+        self.cost = -T.mean(T.log(self.p_y_given_x)[T.arange(target.shape[0]), target])
 
 
     def get_predictions(self, input_):
         return T.argmax(self.forward_prop(input_))
 
 
-    def forward_prop(self, input_, target=None):
+    def forward_prop(self, input_, targets=None):
         """
         If target is 'None', compute the probability of taking the correct path through the output graph.
         Else, compute the probability for each possible path (= each possible output class).
@@ -66,7 +67,7 @@ class HierarchicalSoftmax(object):
         batch_size = input_.shape[0]
 
         # compute all possible predictions [ time complexity is O(n_out) ]
-        if target is None:
+        if targets is None:
 
             def _path_probas(idx):
                 lev1_vec, lev2_vec = level1_vals[idx], level2_vals[idx]
@@ -84,12 +85,17 @@ class HierarchicalSoftmax(object):
         # compute only batch_size predictions [ time complexity is O(2 x sqrt(n_out)) = O(sqrt(n_out)) ]
         else:
             # to each class label, assign a pair of nodes in layer1 and layer2 of the output graph
-            level1_idx = target // self.n_level1_nodes
-            level2_idx = target % self.n_level2_nodes
+            level1_idx = targets // self.n_level1_nodes
+            level2_idx = targets % self.n_level2_nodes
 
             # calculate probability of taking correct path through the graph
             level1_val = level1_vals[T.arange(batch_size), level1_idx]
             level2_val = level2_vals[T.arange(batch_size), level2_idx]
-            output_ = level1_val * level2_val
+            target_probas = level1_val * level2_val
+
+            # output is a matrix of predictions, with dimensionality (batch_size, n_out)
+            # since we only have a probability for the correct label, we assign a probability of 0 to all other labels
+            output_ = T.zeros((batch_size, self.n_out))
+            output_ = T.set_subtensor(output_[T.arange(batch_size), targets], target_probas)
 
         return output_
