@@ -94,7 +94,8 @@ class HierarchicalSoftmax(object):
             target_probas = level1_val * level2_val
 
             # output is a matrix of predictions, with dimensionality (batch_size, n_out)
-            # since we only have a probability for the correct label, we assign a probability of 0 to all other labels
+            # since we only have a probability for the correct label,
+            #  we assign a probability of zero to all other labels
             output_ = T.zeros((batch_size, self.n_out))
             output_ = T.set_subtensor(output_[T.arange(batch_size), targets], target_probas)
 
