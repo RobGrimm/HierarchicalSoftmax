@@ -3,6 +3,7 @@ import time
 import numpy
 import theano
 import theano.tensor as T
+
 from HierarchicalSoftmax import HierarchicalSoftmax
 from Softmax import Softmax
 
