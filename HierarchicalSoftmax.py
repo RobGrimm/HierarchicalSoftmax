@@ -53,7 +53,7 @@ class HierarchicalSoftmax(object):
 
 
     def get_predictions(self, input_):
-        return T.argmax(self.forward_prop(input_))
+        return T.argmax(self.forward_prop(input_), axis=1)
 
 
     def forward_prop(self, input_, targets=None):
@@ -80,7 +80,7 @@ class HierarchicalSoftmax(object):
 
             # since we may have more possible paths through the graph than output classes,
             # ignore the remaining paths
-            output_ = output_[:self.n_out]
+            output_ = output_[:, :self.n_out]
 
         # compute only batch_size predictions [ time complexity is O(2 x sqrt(n_out)) = O(sqrt(n_out)) ]
         else:
