@@ -30,7 +30,7 @@ class Softmax(object):
 
 
     def get_predictions(self, input_):
-        return T.argmax(T.nnet.softmax(T.dot(input_, self.W) + self.b))
+        return T.argmax(T.nnet.softmax(T.dot(input_, self.W) + self.b), axis=1)
 
 
     def negative_log_likelihood(self, y):
