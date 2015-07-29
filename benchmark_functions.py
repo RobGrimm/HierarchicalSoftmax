@@ -91,6 +91,8 @@ def generate_data_train_softmax(n_classes, n_training_examples, input_size, n_ep
     train_set_x, train_set_y = generate_data(n_classes, n_training_examples, input_size)
     n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
 
+    print 'we have %s train batches' % n_train_batches
+
     # allocate symbolic variables for the data
     index = T.lscalar()     # index to a [mini]batch
     x = T.matrix('x')       # data, presented as rasterized images
@@ -158,7 +160,9 @@ def generate_data_train_softmax(n_classes, n_training_examples, input_size, n_ep
     print '\n\n'
 
     # generate a single random test example
-    input_ = numpy.asarray([numpy.random.uniform(size=input_size)])
+    numpy.random.seed(444)
+    input_ = numpy.asarray([numpy.random.rand(input_size)])
+
     predictions = softmax.get_predictions(input_)
 
     # compute class prediction
