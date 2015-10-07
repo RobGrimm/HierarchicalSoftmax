@@ -8,9 +8,11 @@ import theano.tensor as T
 from HierarchicalSoftmax import HierarchicalSoftmax
 from Softmax import Softmax
 
+
 from matplotlib import pyplot
 # set parameters for plots
 pyplot.rcParams.update({'figure.figsize': (25, 20), 'font.size': 25})
+
 
 
 ########################################################################################################################
