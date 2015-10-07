@@ -9,7 +9,7 @@ class HierarchicalSoftmax(object):
     https://github.com/lisa-groundhog/GroundHog
     """
 
-    def __init__(self, input_, target, n_in, n_out):
+    def __init__(self, input_, target, n_in, n_out, create_zero_probabilities_for_output=False):
         """
         :type input_:   theano.tensor.TensorType
         :param input_:  symbolic variable that describes the input (one minibatch)
@@ -22,7 +22,12 @@ class HierarchicalSoftmax(object):
 
         :type n_out:    int
         :param n_out:   number of output units
+
+        :type create_zero_probabilities_for_output:    bool
+        :param create_zero_probabilities_for_output:   whether or not to create zero probabilities for
+                                                       non-target classes during training (eats up time)
         """
+        self.zero_probs_for_output = create_zero_probabilities_for_output
         self.n_out = n_out
 
         # output layer is a 2-level graph
@@ -49,7 +54,11 @@ class HierarchicalSoftmax(object):
         self.params = [self.W1, self.b1, self.W2, self.b2]
 
         self.p_y_given_x = self.forward_prop(input_, target)
-        self.cost = -T.mean(T.log(self.p_y_given_x)[T.arange(target.shape[0]), target])
+
+        if self.zero_probs_for_output:
+            self.cost = -T.mean(T.log(self.p_y_given_x)[T.arange(target.shape[0]), target])
+        else:
+            self.cost = -T.mean(T.log(self.p_y_given_x))
 
 
     def get_predictions(self, input_):
@@ -93,10 +102,15 @@ class HierarchicalSoftmax(object):
             level2_val = level2_vals[T.arange(batch_size), level2_idx]
             target_probas = level1_val * level2_val
 
-            # output is a matrix of predictions, with dimensionality (batch_size, n_out)
-            # since we only have a probability for the correct label,
-            #  we assign a probability of zero to all other labels
-            output = T.zeros((batch_size, self.n_out))
-            output = T.set_subtensor(output[T.arange(batch_size), y_true], target_probas)
+            if self.zero_probs_for_output:
+                # output is a matrix of predictions, with dimensionality (batch_size, n_out).
+                # since we only have a probability for the correct label,
+                # we assign a probability of zero to all other labels
+                output = T.zeros((batch_size, self.n_out))
+                output = T.set_subtensor(output[T.arange(batch_size), y_true], target_probas)
+            else:
+                # use this branch if you want to save computation time by skipping the creation of a matrix that
+                # that contains mostly zeros; in this case, output will be a a single probability (for the target class)
+                output = target_probas
 
         return output
