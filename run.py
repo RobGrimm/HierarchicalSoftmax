@@ -3,16 +3,18 @@ from benchmark_functions import benchmark_softmax
 
 # train hierarchical softmax on dataset with 5.000 output classes
 generate_data_train_softmax(n_classes=5000, n_training_examples=50000, input_size=3, hierarchical=True, n_epochs=2,
-                            batch_size=32)
+                            batch_size=50)
 
 
 # train flat softmax on the same data -- this will take longer
-generate_data_train_softmax(n_classes=5000, n_training_examples=50000, input_size=3, hierarchical=False, n_epochs=2)
+generate_data_train_softmax(n_classes=5000, n_training_examples=50000, input_size=3, hierarchical=False, n_epochs=2,
+                            batch_size=50)
 
 
 # train hierarchical softmax on data set with 1 million output classes
 # will take much longer if you do it with flat softmax
-generate_data_train_softmax(n_classes=1000000, n_training_examples=50000, input_size=3, hierarchical=True, n_epochs=2)
+generate_data_train_softmax(n_classes=1000000, n_training_examples=50000, input_size=3, hierarchical=True, n_epochs=2,
+                            batch_size=50)
 
 
 # for varying numbers of output classes (1000 -- 20.000, in increments of 1000),
